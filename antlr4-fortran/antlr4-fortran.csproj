@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>antlr4_fortran</RootNamespace>
+  </PropertyGroup>
+
+	<Target Name="buildcharp" Inputs="buildcsharp.bat,Fortran77Lexer.g4,Fortran77Parser.g4" Outputs="csharp\Fortran77Lexer.cs,csharp\Fortran77Parser.cs" BeforeTargets="Compile">
+	</Target>
+
+	<ItemGroup>
+	  <PackageReference Include="Antlr4.Runtime.Standard" Version="4.9.2" />
+	</ItemGroup>
+
+</Project>

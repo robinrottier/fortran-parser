@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>antlr4_fortran_parser</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="antlr4-fortran\**" />
+    <EmbeddedResource Remove="antlr4-fortran\**" />
+    <None Remove="antlr4-fortran\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="antlr4-fortran\antlr4-fortran.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="dogtail.f">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
