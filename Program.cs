@@ -4,6 +4,7 @@ using Antlr4.Runtime.Tree;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Dynamic;
 using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -40,24 +41,17 @@ namespace antlr4_fortran_parser
                 }
             }
             AntlrInputStream inputStream = new AntlrInputStream(string.Join("\r\n", inputpp));
-            Fortran77Lexer lexer = new (inputStream);
-
-            //var lexErrorHandler = new MyErrorListener();
-            //lexer.RemoveErrorListeners();
-            //lexer.AddErrorListener(lexErrorHandler);
+            Fortran77Lexer lexer = new(inputStream);
 
             CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
-            Fortran77Parser parser = new (commonTokenStream);
+            Fortran77Parser parser = new(commonTokenStream);
 
-            //parser.RemoveErrorListeners();
-            //parser.AddErrorListener(new MyErrorListener());
-
-            //MyListener listener = new ();
-            //parser.AddParseListener(listener);
-
-            // what does this do? --nothing happens without it!
+            //
+            // parse input
             var res = parser.program();
 
+            //
+            // write result to file
             var format = 2;
             string extn = format switch
             {
@@ -77,7 +71,7 @@ namespace antlr4_fortran_parser
             else
             {
                 using TextWriter wrt = File.CreateText(resfile);
-                printRootNode(res, wrt, format);
+                printNode(res, wrt, format, 0, true);
             }
 
             var fi = new FileInfo(resfile);
@@ -99,34 +93,28 @@ namespace antlr4_fortran_parser
             }
             else if (format == 2)
             {
+                JsonDocument jd = null;
                 try
                 {
                     using var rd = File.OpenRead(resfile);
                     var jo = new JsonDocumentOptions { MaxDepth = 256 };
-                    var jd = JsonDocument.Parse(rd, jo);
+                    jd = JsonDocument.Parse(rd, jo);
                     Console.WriteLine("...verified file!!");
+
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("failed to verify file!! " + e.Message);
                 }
+
+                processJson(jd, resfile);
             }
         }
 
-        static void printRootNode(IParseTree node, TextWriter wrt, int format)
-        {
-            switch (format)
-            {
-                //case 2: wrt.WriteLine("{"); break;
-            }
-            printNode(node, wrt, format, 1, true);
-            switch (format)
-            {
-                //case 2: wrt.WriteLine("}"); break;
-            }
-        }
-
-        static Regex rxIgnore = new Regex("(NcExpr|[LA]expr[0-5])", RegexOptions.Compiled);
+        //
+        // ignore these intermediate expressio nodes when its single child of a parent
+        // OR just rename all to "expr" if more than one child
+        static Regex rxIgnoreExpr = new Regex("(NcExpr|[LAI]expr[0-5])", RegexOptions.Compiled);
 
         static void printNode(IParseTree node, TextWriter wrt, int format, int depth, bool isLastChild)
         {
@@ -135,7 +123,7 @@ namespace antlr4_fortran_parser
             var typeName = type.Name;
             var cc = node.ChildCount;
             bool ignore = false;
-            var indent = "".PadLeft(depth);
+            var indent = "".PadLeft(depth * 2);
             var tail = "";
 
             switch (format)
@@ -145,17 +133,14 @@ namespace antlr4_fortran_parser
 
             if (node is ParserRuleContext)
             {
-                var stripFront = "Fortran77Parser+";
                 var stripEnd = "Context";
-                if (typeName.StartsWith(stripFront))
-                    typeName = typeName.Substring(stripFront.Length);
                 if (typeName.EndsWith(stripEnd))
                     typeName = typeName.Substring(0, typeName.Length - stripEnd.Length);
                 else
                     Debug.Fail("Unexpected type?");
 
-                bool isIgnoreMatch = rxIgnore.IsMatch(typeName);
-                if (isIgnoreMatch)
+                bool isIgnoreExprMatch = rxIgnoreExpr.IsMatch(typeName);
+                if (isIgnoreExprMatch)
                     typeName = "expr";
 
                 // no children
@@ -171,11 +156,11 @@ namespace antlr4_fortran_parser
                 else if (cc == 1)
                 {
                     // and if 
-                    var c1 = node.GetChild(0);                
+                    var c1 = node.GetChild(0);
                     if (c1 is ParserRuleContext)
                     {
                         // if its intermediate part of expression tree we're not intereted in...
-                        if (isIgnoreMatch)
+                        if (isIgnoreExprMatch)
                             ignore = true;
                     }
                     else
@@ -216,7 +201,7 @@ namespace antlr4_fortran_parser
                     if (ignore)
                         printNode(node.GetChild(c), wrt, format, depth, isLastChild);
                     else
-                        printNode(node.GetChild(c), wrt, format, depth + 1, c == cc-1);
+                        printNode(node.GetChild(c), wrt, format, depth + 1, c == cc - 1);
                 }
                 if (!ignore)
                 {
@@ -243,35 +228,78 @@ namespace antlr4_fortran_parser
             }
         }
 
-        public class MyErrorListener : BaseErrorListener
+
+        private static void processJson(JsonDocument jd, string resfile)
         {
-            public override void SyntaxError(TextWriter output, IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine, string msg, RecognitionException e)
+            var jo = new JsonSerializerOptions
             {
-                Debug.WriteLine("SyntaxError: ");
-                base.SyntaxError(output, recognizer, offendingSymbol, line, charPositionInLine, msg, e);
-            }
+                MaxDepth = 256,
+                WriteIndented = true,
+                Converters = { new KVNodeConverter() }
+            };
+            var jwo = new JsonWriterOptions { Indented = true };
+
+            var res1file = resfile.Replace(".json", ".1.json");
+            using var wrt1 = File.CreateText(res1file);
+            JsonSerializer.Serialize(new Utf8JsonWriter(wrt1.BaseStream, jwo), jd, jo);
+            var fi1 = new FileInfo(res1file);
+            Console.WriteLine($"File {fi1.FullName} write complete; {fi1.Length} bytes");
+
+            object model = processJsonElement(jd.RootElement);
+
+            var res2file = resfile.Replace(".json", ".2.json");
+            using var wrt2 = File.CreateText(res2file);
+            JsonSerializer.Serialize(new Utf8JsonWriter(wrt2.BaseStream, jwo), model, jo);
+
+            var fi2 = new FileInfo(res2file);
+            Console.WriteLine($"File {fi2.FullName} write complete; {fi2.Length} bytes");
         }
 
-        public class MyListener : Fortran77ParserBaseListener
+
+        private static object processJsonElement(JsonElement jn)
         {
-            public override void EnterEveryRule([NotNull] ParserRuleContext context)
+            var vk = jn.ValueKind;
+            switch (vk)
             {
-                Debug.WriteLine("Enter: "+ context.Start.ToString());
+                case JsonValueKind.Object:
+                    {
+                        KVNode retkv = null;
+                        foreach (var jnn in jn.EnumerateObject())
+                        {
+                            var k = jnn.Name;
+                            var v = jnn.Value;
+                            var p = processJsonElement(v);
+                            Debug.Assert(retkv == null); // only ever one key in my objects in this model!
+                            retkv = new(k, p);
+                        }
+                        if (retkv == null)
+                            return null;
+                        else
+                            return retkv.optimize();
+                    }
 
-            }
+                case JsonValueKind.Array:
+                    {
+                        ArrayList<object> reta = new();
+                        foreach (var jnv in jn.EnumerateArray())
+                        {
+                            var mv = processJsonElement(jnv);
+                            if (mv != null)
+                                reta.Add(mv);
+                        }
+                        return reta;
+                    }
 
-            /// <inheritdoc/>
-            /// <remarks>The default implementation does nothing.</remarks>
-            public override void ExitEveryRule([NotNull] ParserRuleContext context)
-            {
-            }
+                case JsonValueKind.String:
+                    return jn.GetString();
 
-            public override void VisitErrorNode([NotNull] IErrorNode node)
-            {
-                Debug.WriteLine("Error: ");
-                base.VisitErrorNode(node);
+                case JsonValueKind.Null:
+                    return null;
             }
+            throw new Exception("Unexpected node type?");
         }
+
 
     }
+
 }
