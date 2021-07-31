@@ -445,6 +445,36 @@ namespace antlr4_fortran_parser
                         break;
                     }
 
+                case "SubroutineStatement":
+                    {
+                        ValidateChildCount(6);
+                        ValidateChildString(0, "SUBROUTINE");
+                        var name = ValidateChildString(1);
+                        ValidateChildString(2, "(");
+                        var c3 = ValidateChildNode(3, "Namelist");
+                        ValidateChildString(4, ")");
+                        ValidateChildString(5, "\r\n");
+
+                        var c3cc = c3.ChildCount;
+                        var args = new ArrayList<object>();
+                        for (int c = 0; c < c3cc; c++)
+                        {
+                            var argnode = c3.ValidateChildNode(c, "Identifier");
+                            var argname = argnode.ValidateChildString(0);
+                            if (c < c3cc-1)
+                            {
+                                c++;
+                                c3.ValidateChildString(c, ",");
+                            }
+                            args.Add(argname);
+                        }
+
+                        var ret = new KVNode(Key, null);
+                        ret.AddChild(new KVNode("Name", name));
+                        ret.AddChild(new KVNode("Args", args));
+                        return ret;
+                    }
+
             }
             return this;
         }
