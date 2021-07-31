@@ -376,10 +376,11 @@ namespace antlr4_fortran_parser
                         // shoudl have "COMMON" and object childs only
                         ValidateChildCount(3);
                         var lhs = ValidateChildNode(0, "VarRef");
-                        var name = lhs.ValidateChildString(0);
                         ValidateChildString(1, "=");
                         var rhs = ValidateChildExpr(2);
-                        var ret = new KVNode(Key, new KVNode(name, rhs));
+                        var ret = new KVNode(Key, null);
+                        ret.AddChild(new KVNode("lhs", lhs));
+                        ret.AddChild(new KVNode("rhs", rhs));
                         return ret;
                     }
 
