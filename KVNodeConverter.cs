@@ -45,6 +45,14 @@ namespace antlr4_fortran_parser
             {
                 writer.WriteStringValue(value.ToString());
             }
+            else if (value is int)
+            {
+                writer.WriteNumberValue((int)value);
+            }
+            else if (value is double)
+            {
+                writer.WriteNumberValue((double)value);
+            }
             else
                 Debug.Fail("Unexpected value in KVNode");
         }

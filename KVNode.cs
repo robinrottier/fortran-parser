@@ -14,6 +14,8 @@ namespace antlr4_fortran_parser
 
         bool IsValueNull { get => Value == null; }
         bool IsValueString { get => Value is string; }
+        bool IsValueInt { get => Value is int; }
+        bool IsValueDouble { get => Value is double; }
         bool IsValueNode { get => Value is KVNode; }
         bool IsValueArray { get => Value is ArrayList<object>; }
 
@@ -22,9 +24,8 @@ namespace antlr4_fortran_parser
             get
             {
                 if (IsValueArray) return (Value as ArrayList<object>).Count;
-                if (IsValueNode) return 1;
-                if (IsValueString) return 1;
-                return 0;
+                if (IsValueNull) return 0;
+                return 1;
             }
         }
 
@@ -34,16 +35,19 @@ namespace antlr4_fortran_parser
         {
             if (i >= 0)
             {
-                if (IsValueNode || IsValueString)
-                {
-                    if (i == 0)
-                        return Value;
-                }
-                else if (IsValueArray)
+                if (IsValueArray)
                 {
                     var a = ArrayValue;
                     if (i < a.Count)
                         return a[i];
+                }
+                else if (IsValueNull)
+                {
+                }
+                else
+                {
+                    if (i == 0)
+                        return Value;
                 }
             }
             throw new Exception("Child index out of range");
@@ -54,7 +58,7 @@ namespace antlr4_fortran_parser
             if (i < 0 || i >= ChildCount)
                 throw new ArgumentOutOfRangeException();
             // convert node to array with node
-            if (IsValueString || IsValueNode)
+            if (!IsValueArray)
             {
                 Value = new ArrayList<object> { Value };
             }
@@ -68,12 +72,13 @@ namespace antlr4_fortran_parser
             {
                 Value = new ArrayList<object>();
             }
-            else if (IsValueString || IsValueNode)
+            else if (IsValueArray)
+            {
+            }
+            else
             {
                 Value = new ArrayList<object> { Value };
             }
-            else
-                Debug.Assert(IsValueArray);
             ArrayValue.Add(value);
         }
 
@@ -104,15 +109,27 @@ namespace antlr4_fortran_parser
             for (int c = 0; c < cc; c++)
             {
                 var cs = GetChild(c);
-                if (cs is KVNode)
+                if (cs == null)
+                {
+                    continue;
+                }
+                else if (cs is KVNode)
                 {
                     (cs as KVNode).AppendStringText(sb, sep);
                 }
-                else if (cs is string)
+                else
                 {
                     if (sb.Length > 0)
                         sb.Append(sep);
-                    sb.Append(cs);
+
+                    if (cs is string)
+                        sb.Append(cs);
+                    else if (cs is int)
+                        sb.Append(((int)cs).ToString());
+                    else if (cs is double)
+                        sb.Append(((double)cs).ToString());
+                    else
+                        Debug.Fail("Unexpected type in AppendStirngText");
                 }
             }
         }
@@ -176,7 +193,6 @@ namespace antlr4_fortran_parser
                 case "Statement":
                 case "OtherSpecificationStatement":
                 case "ExecutableStatement":
-                case "Expression":
                     {
                         if (cc == 1)
                         {
@@ -187,6 +203,28 @@ namespace antlr4_fortran_parser
                         else if (cc == 0)
                             return null;
                         throw new Exception($"UNexpected in {Key}");
+                    }
+                // 
+                // these nodes expect just have single child node (expr) or a value
+                // ...so just use that child                 // (and throw if not)
+                case "Expression":
+                    {
+                        if (cc == 1)
+                        {
+                            object c0 = GetChild(0);
+                            if (c0 is KVNode)
+                            {
+                                var kv0 = c0 as KVNode;
+                                if (kv0.Key != "expr" && kv0.Key != "VarRef")
+                                    ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
+                                return kv0;
+                            }
+                            else
+                                return new KVNodeSiblingArray(c0);
+                        }
+                        else if (cc == 0)
+                            return null;
+                        throw new Exception($"Unexpected in {Key}");
                     }
                 //
                 // "whole statement" can have a label and/or EOLs
@@ -204,9 +242,10 @@ namespace antlr4_fortran_parser
 
                             if (c1 is KVNode && string.IsNullOrWhiteSpace(c2.ToString()))
                             {
-                                // extract label and add it to the statement
-                                var ret = c1 as KVNode;
-                                ret.InsertChild(0, new KVNode("LABEL", c0));
+                                // extract label and add it before statement
+                                var ret = new KVNodeSiblingArray();
+                                ret.AddChild(new KVNode("LABEL", c0));
+                                ret.AddChild(c1);
                                 return ret;
                             }
                         }
@@ -339,7 +378,7 @@ namespace antlr4_fortran_parser
                         var lhs = ValidateChildNode(0, "VarRef");
                         var name = lhs.ValidateChildString(0);
                         ValidateChildString(1, "=");
-                        var rhs = ValidateChildNode(2);
+                        var rhs = ValidateChildExpr(2);
                         var ret = new KVNode(Key, new KVNode(name, rhs));
                         return ret;
                     }
@@ -363,7 +402,7 @@ namespace antlr4_fortran_parser
                         int sscc = ss.ChildCount;
                         int ssc = 0;
                         ss.ValidateChildString(ssc++, "(");
-                        for (; ssc < sscc-1; ssc++)
+                        for (; ssc < sscc - 1; ssc++)
                         {
                             var sscn = ss.GetChild(ssc);
                             ret.AddChild(sscn);
@@ -376,18 +415,36 @@ namespace antlr4_fortran_parser
                         ss.ValidateChildString(ssc++, ")");
                         return ret;
                     }
-/*
+
                 case "UnsignedArithmeticConstant":
                     {
                         ValidateChildCount(1);
                         var v = ValidateChildString(0);
-                        int res;
-                        if (int.TryParse(v, out res))
-                            return new KVNodeSiblingArray( res);
+                        if (v.EndsWith("D0"))
+                        {
+                            var v2 = v.Substring(0, v.Length - 2);
+                            double dres;
+                            if (double.TryParse(v2, out dres))
+                            {
+                                return new KVNodeSiblingArray(dres);
+                            }
+                        }
+                        if (v.Contains("."))
+                        {
+                            double dres;
+                            if (double.TryParse(v, out dres))
+                            {
+                                return new KVNodeSiblingArray(dres);
+                            }
+                        }
+                        int ires;
+                        if (int.TryParse(v, out ires))
+                            return new KVNodeSiblingArray(ires);
+
                         ValidateFail("expecting number");
                         break;
                     }
-*/
+
             }
             return this;
         }
@@ -431,7 +488,28 @@ namespace antlr4_fortran_parser
                 ValidateFail($"expecting child {c} to be {key} node (was {c1.Key})");
             return c1;
         }
-    };
+
+        object ValidateChildExpr(int c)
+        {
+            object c1 = GetChild(c);
+            if (c1 == null)
+                ValidateFail($"expecting child {c} to be node or a value");
+            var kv1 = c1 as KVNode;
+            if (kv1 != null)
+            {
+                switch (kv1.Key)
+                {
+                    case "VarRef":
+                    case "expr":
+                        break;
+                    default:
+                        ValidateFail($"expecting expression node as VarRef or expr (was {kv1.Key}");
+                        break;
+                }
+            }
+            return c1;
+        }
+    }
 
     //
     // "dummy" KVNode to indicate its an array at sibling level when adding
