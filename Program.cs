@@ -114,7 +114,7 @@ namespace antlr4_fortran_parser
         //
         // ignore these intermediate expressio nodes when its single child of a parent
         // OR just rename all to "expr" if more than one child
-        static Regex rxIgnoreExpr = new Regex("(NcExpr|[LAI]expr[0-5])", RegexOptions.Compiled);
+        static Regex rxIgnoreExpr = new Regex("(NcExpr|[LAI]expr[0-5(Code)])", RegexOptions.Compiled);
 
         static void printNode(IParseTree node, TextWriter wrt, int format, int depth, bool isLastChild)
         {
@@ -285,7 +285,18 @@ namespace antlr4_fortran_parser
                         {
                             var mv = processJsonElement(jnv);
                             if (mv != null)
-                                reta.Add(mv);
+                            {
+                                var mvsa = mv as KVNodeSiblingArray;
+                                if (mvsa != null)
+                                {
+                                    for (int c = 0; c < mvsa.ChildCount; c++)
+                                    {
+                                        reta.Add(mvsa.GetChild(c));
+                                    }
+                                }
+                                else
+                                    reta.Add(mv);
+                            }
                         }
                         return reta;
                     }

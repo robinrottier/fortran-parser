@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -32,8 +33,8 @@ namespace antlr4_fortran_parser
             }
             else if (value is ArrayList<object>)
             {
-                writer.WriteStartArray();
                 var a = value as ArrayList<object>;
+                writer.WriteStartArray();
                 foreach (var av in a)
                 {
                     WriteValue(writer, av, options);
@@ -44,6 +45,8 @@ namespace antlr4_fortran_parser
             {
                 writer.WriteStringValue(value.ToString());
             }
+            else
+                Debug.Fail("Unexpected value in KVNode");
         }
     }
 
