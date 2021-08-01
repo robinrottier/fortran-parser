@@ -246,6 +246,7 @@ namespace antlr4_fortran_parser
             Console.WriteLine($"File {fi1.FullName} write complete; {fi1.Length} bytes");
 
             object model = processJsonElement(jd.RootElement);
+            Debug.Assert(model is KVNode);
 
             var res2file = resfile.Replace(".json", ".2.json");
             using var wrt2 = File.CreateText(res2file);
@@ -253,6 +254,13 @@ namespace antlr4_fortran_parser
 
             var fi2 = new FileInfo(res2file);
             Console.WriteLine($"File {fi2.FullName} write complete; {fi2.Length} bytes");
+
+            var res3file = resfile.Replace(".json", ".3.json");
+            using var wrt3 = File.CreateText(res3file);
+            new KVNodePrint(wrt3).WriteObjectValue(model as KVNode, 0);
+
+            var fi3 = new FileInfo(res3file);
+            Console.WriteLine($"File {fi3.FullName} write complete; {fi3.Length} bytes");
         }
 
 
