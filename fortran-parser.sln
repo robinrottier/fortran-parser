@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "fortran-parser", "fortran-p
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "antlr4-fortran", "antlr4-fortran\antlr4-fortran.csproj", "{6A8FACEA-B186-4A49-8828-248B214AA311}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fortran-parser Test", "..\fortran-parserTest\fortran-parser Test.csproj", "{5D500C59-A177-447D-B791-0A720FBF8818}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{6A8FACEA-B186-4A49-8828-248B214AA311}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A8FACEA-B186-4A49-8828-248B214AA311}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A8FACEA-B186-4A49-8828-248B214AA311}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D500C59-A177-447D-B791-0A720FBF8818}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D500C59-A177-447D-B791-0A720FBF8818}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D500C59-A177-447D-B791-0A720FBF8818}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D500C59-A177-447D-B791-0A720FBF8818}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

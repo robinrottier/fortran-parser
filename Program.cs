@@ -12,7 +12,7 @@ using System.Xml;
 
 namespace antlr4_fortran_parser
 {
-    class Program
+    public class Program
     {
         static string file = null;
         static int format = 2;
@@ -23,7 +23,9 @@ namespace antlr4_fortran_parser
         static bool help = false;
         static int verbose = 0;
 
-        static void Main(string[] args)
+        public static TextWriter JSONPathOutput = null;
+
+        public static void Main(string[] args)
         {
             try
             {
@@ -362,7 +364,11 @@ args:
                     var f = jfmt == 0 ? Newtonsoft.Json.Formatting.None : Newtonsoft.Json.Formatting.Indented;
                     foreach (var token in nsSelectRes)
                     {
-                        Console.WriteLine(token.ToString(f));
+                        var s = token.ToString(f);
+                        if (JSONPathOutput == null)
+                            Console.WriteLine(s);
+                        else
+                            JSONPathOutput.WriteLine(s);
                     }
                 }
             }
