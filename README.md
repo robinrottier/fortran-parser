@@ -3,19 +3,29 @@
 Example command lines
 =====================
 
-fortran-parser.exe dogtail.f
 - parses dogtail.f and writes dogtail.f.json and dogtail.f.2.json (with more optimized structure)
+	fortran-parser.exe dogtail.f
 
-fortran-parser.exe --noparse dogtail.f $.Program[2].SubroutineSubprogram[0].SubroutineStatement[0].Name
-- jsonpath on output to print name of subroutine from 2nd subprogram block
+- name of subroutine from IO sub-program block
+	fortran-parser.exe --noparse dogtail.f $.Program.IO[0].SubroutineStatement[0].Name
   (should print IO for digtail.f)
 
-fortran-parser.exe --noparse dogtail.f $.Program[2].SubroutineSubprogram[3].CommonStatement.CONSTNTS
-- print value for COMMON CONSTNTS block (which is 3rd statement in 2nd subprog block)
+- List all COMMON blocks in sub IO...
+	fortran-parser.exe --noparse dogtail.f $.Program.IO..CommonStatement.Name
+  or
+    fortran-parser.exe --noparse dogtail.f $.Program.IO[*].CommonStatement.Name
 
-fortran-parser.exe --noparse dogtail.f $.Program[2].SubroutineSubprogram[3].CommonStatement.CONSTNTS[*]
-- same print value for COMMON CONSTNTS block but now as sep strings instead of array syntax
+- List items in specified common block...
+    fortran-parser.exe --noparse dogtail.f $.Program.IO[?(@.CommonStatement.Name=='CONSTNTS')].CommonStatement.Items[*]
+  ...seems only work by filter includign commonstatemet rather than selecting commonstatement first and then filter again name
 
-fortran-parser.exe --noparse dogtail.f $.Program[2].SubroutineSubprogram[?(@.CommonStatement.CONSTNTS)].CommonStatement.CONSTNTS[*]
-- same but now with a filter so didnt have to know line index for common block (BUT a bit more repitive)
+ - LIst variable on lhs of assignments
+	fortran-parser.exe --noparse dogtail.f $.Program.IO[?(@.AssignmentStatement)].AssignmentStatement.lhs.VarRef -jpf0
+	...note "-jpf0" to force single line output of each result token (otherwise vars with array get split onto multiple lines)
+
+ - LIst variable on either side of assignments
+	fortran-parser.exe --noparse dogtail.f $.Program.IO[?(@.AssignmentStatement)].AssignmentStatement..VarRef -jpf0
+
+
+
 

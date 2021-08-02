@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -41,6 +42,18 @@ namespace antlr4_fortran_parser
                 }
                 writer.WriteEndArray();
             }
+            else if (value is KVDict)
+            {
+                var d = value as KVDict;
+                foreach (DictionaryEntry e in d)
+                {
+                    string k = e.Key.ToString();
+                    writer.WriteStartObject();
+                    writer.WritePropertyName(k);
+                    WriteValue(writer, e.Value, options);
+                    writer.WriteEndObject();
+                }
+            }
             else if (value is string)
             {
                 writer.WriteStringValue(value.ToString());
@@ -57,5 +70,5 @@ namespace antlr4_fortran_parser
                 Debug.Fail("Unexpected value in KVNode");
         }
     }
-
 }
+

@@ -1,6 +1,7 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text;
 
@@ -19,18 +20,21 @@ namespace antlr4_fortran_parser
         bool IsValueDouble { get => Value is double; }
         bool IsValueNode { get => Value is KVNode; }
         bool IsValueArray { get => Value is ArrayList<object>; }
+        bool IsValueDict { get => Value is KVDict; }
 
         public int ChildCount
         {
             get
             {
-                if (IsValueArray) return (Value as ArrayList<object>).Count;
+                if (IsValueArray) return ArrayValue.Count;
+                if (IsValueDict) return DictValue.Count;
                 if (IsValueNull) return 0;
                 return 1;
             }
         }
 
         ArrayList<object> ArrayValue { get { return Value as ArrayList<object>; } }
+        KVDict DictValue { get { return Value as KVDict; } }
 
         public object GetChild(int i)
         {
@@ -42,6 +46,10 @@ namespace antlr4_fortran_parser
                     if (i < a.Count)
                         return a[i];
                 }
+                else if (IsValueDict)
+                {
+                    return DictValue[i];
+                }
                 else if (IsValueNull)
                 {
                 }
@@ -51,7 +59,7 @@ namespace antlr4_fortran_parser
                         return Value;
                 }
             }
-            throw new Exception("Child index out of range");
+            throw new ArgumentOutOfRangeException("Child index out of range");
         }
 
         void InsertChild(int i, object value)
@@ -59,6 +67,8 @@ namespace antlr4_fortran_parser
             if (i < 0 || i >= ChildCount)
                 throw new ArgumentOutOfRangeException();
             // convert node to array with node
+            if (IsValueDict)
+                throw new InvalidOperationException("Cant convert dictionary value into array");
             if (!IsValueArray)
             {
                 Value = new ArrayList<object> { Value };
@@ -68,6 +78,8 @@ namespace antlr4_fortran_parser
 
         void AddChild(object value)
         {
+            if (IsValueDict)
+                throw new InvalidOperationException("Cant convert dictionary value into array");
             // convert node to array with node
             if (IsValueNull)
             {
@@ -169,17 +181,20 @@ namespace antlr4_fortran_parser
                         // should be left with one "MainProgram" and multiple subs
                         // so reorganize to look better
                         //
-                        var ret = new Dictionary<string, object>();
+                        var ret = new KVDict();
                         var mp = ValidateChildNode(0, "MainProgram");
+                        ret["Main"] = mp.Value; 
+                        //
                         for (int c = 1; c < cc; c++)
                         {
                             var sp = ValidateChildNode(c, "SubroutineSubprogram");
                             var ss = sp.ValidateChildNode(0, "SubroutineStatement");
                             var name = ss.ValidateChildNode(0, "Name").ValidateChildString(0);
+
+                            ret[name] = sp.Value;
                         }
-                        
                         //
-                        return this;
+                        return new KVNode(Key, ret);
                     }
                 //
                 // Comments...just remove
@@ -382,8 +397,10 @@ namespace antlr4_fortran_parser
                             if (c < c12cc)
                                 c12.ValidateChildString(c, ",");
                         }
-                        var ret = new KVNode(Key, new KVNode(blockName, items));
-                        return ret;
+                        var d = new KVDict();
+                        d["Name"] = blockName;
+                        d["Items"] = items;
+                        return new KVNode(Key, d);
                     }
 
                 case "AssignmentStatement":
@@ -393,10 +410,10 @@ namespace antlr4_fortran_parser
                         var lhs = ValidateChildNode(0, "VarRef");
                         ValidateChildString(1, "=");
                         var rhs = ValidateChildExpr(2);
-                        var ret = new KVNode(Key, null);
-                        ret.AddChild(new KVNode("lhs", lhs));
-                        ret.AddChild(new KVNode("rhs", rhs));
-                        return ret;
+                        var d = new KVDict();
+                        d["lhs"] = lhs;
+                        d["rhs"] = rhs;
+                        return new KVNode(Key, d);
                     }
 
                 case "VarRef":
@@ -477,7 +494,7 @@ namespace antlr4_fortran_parser
                         {
                             var argnode = c3.ValidateChildNode(c, "Identifier");
                             var argname = argnode.ValidateChildString(0);
-                            if (c < c3cc-1)
+                            if (c < c3cc - 1)
                             {
                                 c++;
                                 c3.ValidateChildString(c, ",");
@@ -570,5 +587,10 @@ namespace antlr4_fortran_parser
         public KVNodeSiblingArray(object value) : base("", value)
         {
         }
+    }
+
+    public class KVDict : OrderedDictionary
+    {
+        
     }
 }

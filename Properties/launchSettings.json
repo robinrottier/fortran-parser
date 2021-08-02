@@ -2,7 +2,7 @@
   "profiles": {
     "fortran-parser": {
       "commandName": "Project",
-      "commandLineArgs": "dogtail.f 2 1"
+      "commandLineArgs": "-v dogtail.f"
     }
   }
 }

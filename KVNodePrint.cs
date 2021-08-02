@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -25,6 +26,8 @@ namespace antlr4_fortran_parser
                 WriteNullValue();
             else if (obj is KVNode)
                 WriteNode(obj as KVNode, depth);
+            else if (obj is KVDict)
+                WriteDictValue(obj as KVDict, depth);
             else if (obj is ArrayList<object>)
                 WriteArrayValue(obj as ArrayList<object>, depth + 1);
             else if (obj is int)
@@ -33,6 +36,8 @@ namespace antlr4_fortran_parser
                 WriteNumberValue((double)obj);
             else if (obj is string)
                 WriteStringValue(obj.ToString());
+            else
+                throw new InvalidOperationException();
         }
 
         public void WriteNode(KVNode kvn, int depth)
@@ -63,6 +68,29 @@ namespace antlr4_fortran_parser
                 }
             }
             return true;
+        }
+
+        public void WriteDictValue(KVDict value, int depth)
+        {
+            WriteIndent(depth);
+            Write($"{{ ");
+            WriteLine();
+            var d = value as KVDict;
+            int c = d.Count;
+            int n = 0;
+            foreach (DictionaryEntry e in d)
+            {
+                string k = e.Key.ToString();
+                WriteIndent(depth+1);
+                Write($"\"{k}\": ");
+                WriteObjectValue(e.Value, depth+1);
+                if (++n < c)
+                    Write(",");
+                WriteLine();
+            }
+            WriteIndent(depth);
+            Write($"}}");
+            WriteLine();
         }
 
         public void WriteArrayValue(ArrayList<object> value, int depth)

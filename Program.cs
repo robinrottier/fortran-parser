@@ -18,6 +18,7 @@ namespace antlr4_fortran_parser
         static int format = 2;
         static int jformat = 2;
         static string jquery = null;
+        static int jfmt = 1;
         static bool noparse = false;
         static bool help = false;
         static int verbose = 0;
@@ -43,10 +44,14 @@ namespace antlr4_fortran_parser
                         jformat = int.Parse(args[++ax]);
                     else if (a == "-p" || a == "--json-path")
                         jquery = args[++ax];
+                    else if (a == "-jpf0" || a == "--jpf-none")
+                        jfmt = 0;
+                    else if (a == "-jpfi" || a == "--jpf-indent")
+                        jfmt = 1;
                     else
                     {
                         switch (nf++)
-                            {
+                        {
                             case 0: file = a; break;
                             case 1: jquery = a; break;
                             default: throw new ArgumentException();
@@ -71,6 +76,7 @@ args:
     --jformat   processed JSON file format; 0:none, 1:normal 2:optimized
     --noparse   do not reparse fortran file just reuse previous results for new query
     --verbose   print some detail as we go along
+    --jpf-none  JSOPNPath formatting none (single line per result token)
     [file]      FORTRAN input file name (ends in .f ...result file will be same name replacing with .json etc)
     [JSONPath]  (json only) select tokens from processed result and print
 ");
@@ -134,12 +140,12 @@ args:
                     using TextWriter wrt = File.CreateText(resfile);
                     printNode(res, wrt, format, 0, true);
                 }
-            }
 
-            if (verbose > 0)
-            {
-                var fi = new FileInfo(resfile);
-                Console.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
+                if (verbose > 0)
+                {
+                    var fi = new FileInfo(resfile);
+                    Console.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
+                }
             }
 
             if (format == 1)
@@ -311,33 +317,36 @@ args:
             Debug.Assert(model is KVNode);
 
             var resjfile = resfile.Replace(".json", $".{jformat}.json");
-            using var wrtj = File.CreateText(resjfile);
 
-            switch (jformat)
+            if (!noparse)
             {
-                case 0:
-                    {
-                        JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), jd, jo);
-                        break;
-                    }
-                case 1:
-                    {
-                        JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), model, jo);
-                        break;
-                    }
-                case 2:
-                    {
-                        new KVNodePrint(wrtj).WriteObjectValue(model as KVNode, 0);
-                        break;
-                    }
-            }
-            wrtj.Close();
-            if (verbose > 0)
-            {
-                var fij = new FileInfo(resjfile);
-                Console.WriteLine($"File {fij.FullName} write complete; {fij.Length} bytes");
-            }
+                using var wrtj = File.CreateText(resjfile);
 
+                switch (jformat)
+                {
+                    case 0:
+                        {
+                            JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), jd, jo);
+                            break;
+                        }
+                    case 1:
+                        {
+                            JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), model, jo);
+                            break;
+                        }
+                    case 2:
+                        {
+                            new KVNodePrint(wrtj).WriteObjectValue(model as KVNode, 0);
+                            break;
+                        }
+                }
+                wrtj.Close();
+                if (verbose > 0)
+                {
+                    var fij = new FileInfo(resjfile);
+                    Console.WriteLine($"File {fij.FullName} write complete; {fij.Length} bytes");
+                }
+            }
             try
             {
                 var nsRdr = new Newtonsoft.Json.JsonTextReader(File.OpenText(resjfile));
@@ -350,9 +359,10 @@ args:
                 {
                     var nsjo = (Newtonsoft.Json.Linq.JObject)nsRes;
                     var nsSelectRes = nsjo.SelectTokens(jquery);
+                    var f = jfmt == 0 ? Newtonsoft.Json.Formatting.None : Newtonsoft.Json.Formatting.Indented;
                     foreach (var token in nsSelectRes)
                     {
-                        Console.WriteLine(token.ToString());
+                        Console.WriteLine(token.ToString(f));
                     }
                 }
             }
