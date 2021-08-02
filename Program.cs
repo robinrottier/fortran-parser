@@ -14,46 +14,71 @@ namespace antlr4_fortran_parser
 {
     class Program
     {
+        static string file = null;
+        static int format = 2;
+        static int jformat = 2;
+        static string jquery = null;
+        static bool noparse = false;
+        static bool help = false;
+        static int verbose = 0;
+
         static void Main(string[] args)
         {
-            var file = args.Length == 0 || string.IsNullOrEmpty(args[0]) ? "dogtail.f" : args[0];
-            var input = File.ReadAllLines(file);
-            //
-            // preprocess for linecont as antlr4 lex cant handle that (it splits either side into 2 sep tokens but
-            // really just string concat
-            //
-            List<string> inputpp = new();
-            int blanklines = 0;
-            foreach (var l in input)
+            try
             {
-                if (l.Length >= 6 && l[5] == '&')
+
+                int nf = 0;
+                for (int ax = 0; ax < args.Length; ax++)
                 {
-                    // add to end of prev line...
-                    inputpp[inputpp.Count - 1] += l.Substring(6);
-                    blanklines++;
-                }
-                else
-                {
-                    for (var i = 0; i < blanklines; i++)
-                        inputpp.Add("");
-                    blanklines = 0;
-                    inputpp.Add(l);
+                    string a = args[ax];
+                    if (a == "-h" || a == "--help")
+                        help = true;
+                    else if (a == "-v" || a == "--verbose")
+                        verbose = 1;
+                    else if (a == "-n" || a == "--noparse")
+                        noparse = true;
+                    else if (a == "-f" || a == "--format")
+                        format = int.Parse(args[++ax]);
+                    else if (a == "-j" || a == "--jformat")
+                        jformat = int.Parse(args[++ax]);
+                    else if (a == "-p" || a == "--json-path")
+                        jquery = args[++ax];
+                    else
+                    {
+                        switch (nf++)
+                            {
+                            case 0: file = a; break;
+                            case 1: jquery = a; break;
+                            default: throw new ArgumentException();
+                        }
+                    }
                 }
             }
-            AntlrInputStream inputStream = new AntlrInputStream(string.Join("\r\n", inputpp));
-            Fortran77Lexer lexer = new(inputStream);
+            catch
+            {
+                Console.WriteLine("Argument error");
+                help = true;
+            }
 
-            CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
-            Fortran77Parser parser = new(commonTokenStream);
-
-            //
-            // parse input
-            var res = parser.program();
-
+            if (help || string.IsNullOrEmpty(file))
+            {
+                Console.WriteLine(
+                    @"
+fortran-parser [args] [file] [JSONPath]
+args:
+    --help      print this help
+    --format    raw output format 0:LISP, 1:XML, 2:JSON
+    --jformat   processed JSON file format; 0:none, 1:normal 2:optimized
+    --noparse   do not reparse fortran file just reuse previous results for new query
+    --verbose   print some detail as we go along
+    [file]      FORTRAN input file name (ends in .f ...result file will be same name replacing with .json etc)
+    [JSONPath]  (json only) select tokens from processed result and print
+");
+                return;
+            }
             //
             // write result to file
-            var format = 2;
-            string extn = format switch
+            string extn = Math.Abs(format) switch
             {
                 0 => ".lisp",
                 1 => ".xml",
@@ -62,20 +87,60 @@ namespace antlr4_fortran_parser
             };
             var resfile = file + extn;
 
-            if (format == 0)
+            if (!noparse)
             {
-                // LISP Like tree as single string
-                string lispRes = res.ToStringTree();
-                File.WriteAllText(resfile, lispRes);
-            }
-            else
-            {
-                using TextWriter wrt = File.CreateText(resfile);
-                printNode(res, wrt, format, 0, true);
+
+                var input = File.ReadAllLines(file);
+                //
+                // preprocess for linecont as antlr4 lex cant handle that (it splits either side into 2 sep tokens but
+                // really just string concat
+                //
+                List<string> inputpp = new();
+                int blanklines = 0;
+                foreach (var l in input)
+                {
+                    if (l.Length >= 6 && l[5] == '&')
+                    {
+                        // add to end of prev line...
+                        inputpp[inputpp.Count - 1] += l.Substring(6);
+                        blanklines++;
+                    }
+                    else
+                    {
+                        for (var i = 0; i < blanklines; i++)
+                            inputpp.Add("");
+                        blanklines = 0;
+                        inputpp.Add(l);
+                    }
+                }
+                AntlrInputStream inputStream = new AntlrInputStream(string.Join("\r\n", inputpp));
+                Fortran77Lexer lexer = new(inputStream);
+
+                CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
+                Fortran77Parser parser = new(commonTokenStream);
+
+                //
+                // parse input
+                var res = parser.program();
+
+                if (format == 0)
+                {
+                    // LISP Like tree as single string
+                    string lispRes = res.ToStringTree();
+                    File.WriteAllText(resfile, lispRes);
+                }
+                else
+                {
+                    using TextWriter wrt = File.CreateText(resfile);
+                    printNode(res, wrt, format, 0, true);
+                }
             }
 
-            var fi = new FileInfo(resfile);
-            Console.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
+            if (verbose > 0)
+            {
+                var fi = new FileInfo(resfile);
+                Console.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
+            }
 
             if (format == 1)
             {
@@ -84,14 +149,15 @@ namespace antlr4_fortran_parser
                 {
                     XmlDocument x = new();
                     x.Load(resfile);
-                    Console.WriteLine("...verified file!!");
+                    if (verbose > 0)
+                        Console.WriteLine("...verified file!!");
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("failed to verify file!! " + e.Message);
                 }
             }
-            else if (format == 2)
+            else if (format == 2 || format == -2)
             {
                 JsonDocument jd = null;
                 try
@@ -99,7 +165,8 @@ namespace antlr4_fortran_parser
                     using var rd = File.OpenRead(resfile);
                     var jo = new JsonDocumentOptions { MaxDepth = 256 };
                     jd = JsonDocument.Parse(rd, jo);
-                    Console.WriteLine("...verified file!!");
+                    if (verbose > 0)
+                        Console.WriteLine("...verified file!!");
 
                 }
                 catch (Exception e)
@@ -107,7 +174,8 @@ namespace antlr4_fortran_parser
                     Console.WriteLine("failed to verify file!! " + e.Message);
                 }
 
-                processJson(jd, resfile);
+                if (jformat > 0)
+                    processJson(jformat, jd, resfile, jquery);
             }
         }
 
@@ -229,7 +297,7 @@ namespace antlr4_fortran_parser
         }
 
 
-        private static void processJson(JsonDocument jd, string resfile)
+        private static void processJson(int jformat, JsonDocument jd, string resfile, string jquery)
         {
             var jo = new JsonSerializerOptions
             {
@@ -239,30 +307,61 @@ namespace antlr4_fortran_parser
             };
             var jwo = new JsonWriterOptions { Indented = true };
 
-            var res1file = resfile.Replace(".json", ".1.json");
-            using var wrt1 = File.CreateText(res1file);
-            JsonSerializer.Serialize(new Utf8JsonWriter(wrt1.BaseStream, jwo), jd, jo);
-            var fi1 = new FileInfo(res1file);
-            Console.WriteLine($"File {fi1.FullName} write complete; {fi1.Length} bytes");
-
             object model = processJsonElement(jd.RootElement);
             Debug.Assert(model is KVNode);
 
-            var res2file = resfile.Replace(".json", ".2.json");
-            using var wrt2 = File.CreateText(res2file);
-            JsonSerializer.Serialize(new Utf8JsonWriter(wrt2.BaseStream, jwo), model, jo);
+            var resjfile = resfile.Replace(".json", $".{jformat}.json");
+            using var wrtj = File.CreateText(resjfile);
 
-            var fi2 = new FileInfo(res2file);
-            Console.WriteLine($"File {fi2.FullName} write complete; {fi2.Length} bytes");
+            switch (jformat)
+            {
+                case 0:
+                    {
+                        JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), jd, jo);
+                        break;
+                    }
+                case 1:
+                    {
+                        JsonSerializer.Serialize(new Utf8JsonWriter(wrtj.BaseStream, jwo), model, jo);
+                        break;
+                    }
+                case 2:
+                    {
+                        new KVNodePrint(wrtj).WriteObjectValue(model as KVNode, 0);
+                        break;
+                    }
+            }
+            wrtj.Close();
+            if (verbose > 0)
+            {
+                var fij = new FileInfo(resjfile);
+                Console.WriteLine($"File {fij.FullName} write complete; {fij.Length} bytes");
+            }
 
-            var res3file = resfile.Replace(".json", ".3.json");
-            using var wrt3 = File.CreateText(res3file);
-            new KVNodePrint(wrt3).WriteObjectValue(model as KVNode, 0);
+            try
+            {
+                var nsRdr = new Newtonsoft.Json.JsonTextReader(File.OpenText(resjfile));
+                var nsSerializer = new Newtonsoft.Json.JsonSerializer();
+                var nsRes = nsSerializer.Deserialize(nsRdr);
+                if (verbose > 0)
+                    Console.WriteLine("...verified");
 
-            var fi3 = new FileInfo(res3file);
-            Console.WriteLine($"File {fi3.FullName} write complete; {fi3.Length} bytes");
+                if (!string.IsNullOrEmpty(jquery))
+                {
+                    var nsjo = (Newtonsoft.Json.Linq.JObject)nsRes;
+                    var nsSelectRes = nsjo.SelectTokens(jquery);
+                    foreach (var token in nsSelectRes)
+                    {
+                        Console.WriteLine(token.ToString());
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"...verified failed on {resjfile}: {e.Message}");
+            }
+
         }
-
 
         private static object processJsonElement(JsonElement jn)
         {

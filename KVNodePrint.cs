@@ -80,7 +80,7 @@ namespace antlr4_fortran_parser
                     singleline = false;
                 }
             }
-            WriteIndent(depth);
+
             Write("[");
             if (!singleline)
                 WriteLine();

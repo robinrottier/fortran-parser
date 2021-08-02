@@ -1,5 +1,6 @@
 ﻿using Antlr4.Runtime.Misc;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
@@ -164,6 +165,20 @@ namespace antlr4_fortran_parser
                                 cc--;
                             }
                         }
+                        //
+                        // should be left with one "MainProgram" and multiple subs
+                        // so reorganize to look better
+                        //
+                        var ret = new Dictionary<string, object>();
+                        var mp = ValidateChildNode(0, "MainProgram");
+                        for (int c = 1; c < cc; c++)
+                        {
+                            var sp = ValidateChildNode(c, "SubroutineSubprogram");
+                            var ss = sp.ValidateChildNode(0, "SubroutineStatement");
+                            var name = ss.ValidateChildNode(0, "Name").ValidateChildString(0);
+                        }
+                        
+                        //
                         return this;
                     }
                 //
