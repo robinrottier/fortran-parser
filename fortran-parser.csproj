@@ -10,12 +10,16 @@
 
   <ItemGroup>
     <Compile Remove="antlr4-fortran\**" />
+    <Compile Remove="fortran-parserTest\**" />
     <EmbeddedResource Remove="antlr4-fortran\**" />
+    <EmbeddedResource Remove="fortran-parserTest\**" />
     <None Remove="antlr4-fortran\**" />
+    <None Remove="fortran-parserTest\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="NUnit" Version="3.13.2" />
     <PackageReference Include="System.Collections.Specialized" Version="4.3.0" />
   </ItemGroup>
 
