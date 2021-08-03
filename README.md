@@ -27,5 +27,13 @@ Example command lines
 	fortran-parser.exe --noparse dogtail.f $.Program.IO[?(@.AssignmentStatement)].AssignmentStatement..VarRef -jpf0
 
 
+Docker help
+===========
 
+A build is available on docker hub at rpobinrottier/fortranparser
+
+Run this image with a command like:
+docker run -v "%cd%":/app/f robinrottier/fortranparser /app/f/xxx.f -n $.Program.IO
+
+..this makes current directory in your (windows) host avilable as mount in the app directory for the container.
 
