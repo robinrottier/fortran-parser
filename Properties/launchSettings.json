@@ -3,6 +3,9 @@
     "fortran-parser": {
       "commandName": "Project",
       "commandLineArgs": "-v dogtail.f"
+    },
+    "Docker": {
+      "commandName": "Docker"
     }
   }
 }
