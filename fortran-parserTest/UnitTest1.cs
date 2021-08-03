@@ -3,6 +3,7 @@ using antlr4_fortran_parser;
 using System.IO;
 using System.Diagnostics;
 using System.Text;
+using System;
 
 namespace fortran_parserTest
 {
@@ -14,7 +15,7 @@ namespace fortran_parserTest
         }
 
         [Test]
-        public void Test1()
+        public void Test_program_on_dogtail()
         {
             var f = "dogtail.f";
             Assert.IsTrue(File.Exists(f));
@@ -22,8 +23,10 @@ namespace fortran_parserTest
             Assert.IsTrue(File.Exists(f + ".json"));
             Assert.IsTrue(File.Exists(f + ".2.json"));
 
-            test_JSONPath(f, "$.Program.IO[0].SubroutineStatement[0].Name", "\"IO\"\r\n");
+            test_JSONPath(f, "$.Program.IO[0].SubroutineStatement[0].Name", $"\"IO\"{EOL}");
         }
+
+        const string EOL = "\r\n";
 
         void test_JSONPath(string file, string query, string expected)
         {
@@ -32,6 +35,12 @@ namespace fortran_parserTest
             Program.JSONPathOutput = wrt;
             Program.Main(new string[] { "-n", file, $"{query}" });
             string res = sb.ToString();
+
+            // convert expected eol to current writer eol
+            var nl = wrt.NewLine;
+            if (nl != EOL)
+                expected = expected.Replace(EOL, nl);
+
             Assert.AreEqual(expected, res);
         }
     }
