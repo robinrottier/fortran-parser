@@ -37,3 +37,28 @@ docker run -v "%cd%":/app/f robinrottier/fortranparser /app/f/xxx.f -n $.Program
 
 ..this makes current directory in your (windows) host avilable as mount in the app directory for the container.
 
+JULIA Help
+==========
+Load this file using JSON
+```julia
+	import JSON
+	f = JSON.parsefile(<filename>)
+```
+THen extract assignments in EQNS1 sub...
+```julia
+	a=filter(x->haskey(x,"AssignmentStatement"), f["Program"]["EQNS1"])
+```
+And get rid of the "assingment" outer collection
+```julia
+	a2 = map(x->x["AssignmentStatement"], a)
+```
+THen extract lhs variables...
+```julia
+	a3 = map(x->x["lhs"]["VarRef"], a2)
+	- simple vaiable prints "x", arrays print like Any["x", 1]
+```
+Find the KE assignent statement in IO function...
+```julia
+	filter(x->haskey(x,"AssignmentStatement") && x["AssignmentStatement"]["lhs"]["VarRef"] == "KE", f["Program"]["IO"])[1]["AssignmentStatement"]["rhs"]
+```
+
