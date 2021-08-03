@@ -30,7 +30,7 @@ Example command lines
 Docker help
 ===========
 
-A build is available on docker hub at rpobinrottier/fortranparser
+A build is available on docker hub at https://hub.docker.com/repository/docker/robinrottier/fortranparser
 
 Run this image with a command like:
 docker run -v "%cd%":/app/f robinrottier/fortranparser /app/f/xxx.f -n $.Program.IO
@@ -55,9 +55,10 @@ And get rid of the "assingment" outer collection
 THen extract lhs variables...
 ```julia
 	a3 = map(x->x["lhs"]["VarRef"], a2)
-	- simple vaiable prints "x", arrays print like Any["x", 1]
 ```
-Find the KE assignent statement in IO function...
+where a simple variable prints "x", arrays print like Any["x", 1]
+
+Find the KE assignent statement in IO function and get the rhs expression...
 ```julia
 	filter(x->haskey(x,"AssignmentStatement") && x["AssignmentStatement"]["lhs"]["VarRef"] == "KE", f["Program"]["IO"])[1]["AssignmentStatement"]["rhs"]
 ```

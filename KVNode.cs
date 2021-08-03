@@ -122,30 +122,42 @@ namespace antlr4_fortran_parser
             for (int c = 0; c < cc; c++)
             {
                 var cs = GetChild(c);
-                if (cs == null)
-                {
-                    continue;
-                }
-                else if (cs is KVNode)
-                {
-                    (cs as KVNode).AppendStringText(sb, sep);
-                }
-                else
-                {
-                    if (sb.Length > 0)
-                        sb.Append(sep);
-
-                    if (cs is string)
-                        sb.Append(cs);
-                    else if (cs is int)
-                        sb.Append(((int)cs).ToString());
-                    else if (cs is double)
-                        sb.Append(((double)cs).ToString());
-                    else
-                        Debug.Fail("Unexpected type in AppendStirngText");
-                }
+                AppendStringText(sb, cs, sep);
             }
         }
+
+        static void AppendStringText(StringBuilder sb, object obj, string sep = " ")
+        {
+            if (obj == null)
+            {
+                return;
+            }
+            else if (obj is KVNode)
+            {
+                (obj as KVNode).AppendStringText(sb, sep);
+            }
+            else if (obj is ArrayList<object>)
+            {
+                var a = obj as ArrayList<object>;
+                foreach (var i in a)
+                    AppendStringText(sb, i, sep);
+            }
+            else
+            {
+                if (sb.Length > 0)
+                    sb.Append(sep);
+
+                if (obj is string)
+                    sb.Append(obj);
+                else if (obj is int)
+                    sb.Append(((int)obj).ToString());
+                else if (obj is double)
+                    sb.Append(((double)obj).ToString());
+                else
+                    Debug.Fail("Unexpected type in AppendStirngText");
+            }
+        }
+
 
         string GetChildStringText(int c, string sep = " ")
         {
@@ -183,7 +195,7 @@ namespace antlr4_fortran_parser
                         //
                         var ret = new KVDict();
                         var mp = ValidateChildNode(0, "MainProgram");
-                        ret["Main"] = mp.Value; 
+                        ret["Main"] = mp.Value;
                         //
                         for (int c = 1; c < cc; c++)
                         {
@@ -247,7 +259,14 @@ namespace antlr4_fortran_parser
                                 var kv0 = c0 as KVNode;
                                 if (kv0.Key != "expr" && kv0.Key != "VarRef")
                                     ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
-                                return kv0;
+                                //
+                                // flatten expression tree into array
+                                var a = new List<object>();
+                                addExprTreeToArray(c0, a);
+                                var ret = new KVNode("expr", null);
+                                foreach (var x in a)
+                                    ret.AddChild(x);
+                                return ret;
                             }
                             else
                                 return new KVNodeSiblingArray(c0);
@@ -512,6 +531,25 @@ namespace antlr4_fortran_parser
             return this;
         }
 
+        void addExprTreeToArray(object node, List<object> output)
+        {
+            var kvn = node as KVNode;
+            if (kvn != null)
+            {
+                var val = kvn.Value;
+                if (kvn.Key == "expr")
+                {
+                    int cc = kvn.ChildCount;
+                    for (int c = 0; c < cc; c++)
+                    {
+                        addExprTreeToArray(kvn.GetChild(c), output);
+                    }
+                    return;
+                }
+            }
+            output.Add(node);
+        }
+
         void ValidateFail(string message)
         {
             throw new Exception($"{Key} {message}");
@@ -563,8 +601,9 @@ namespace antlr4_fortran_parser
                 switch (kv1.Key)
                 {
                     case "VarRef":
+                        return kv1;
                     case "expr":
-                        break;
+                        return kv1.Value;
                     default:
                         ValidateFail($"expecting expression node as VarRef or expr (was {kv1.Key}");
                         break;
@@ -591,6 +630,6 @@ namespace antlr4_fortran_parser
 
     public class KVDict : OrderedDictionary
     {
-        
+
     }
 }
