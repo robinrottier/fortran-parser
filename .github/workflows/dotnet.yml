@@ -12,8 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
+      proj: fortran-parser.csproj
       dbg_version: 0.9.0-debug-${{ github.run_number }}
       rel_version: 0.9.0-prerelease-${{ github.run_number }}
+      pub_dir: bin/pub
+      pub_res: bin/fortran-parser.zip
   
     steps:
     - uses: actions/checkout@v2
@@ -30,9 +33,9 @@ jobs:
     - name: Build Release
       run: dotnet build --no-restore -c Release -p:RELEASE_VERSION=${{ env.rel_version }}
     - name: Build publish
-      run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.rel_version }} -o bin\pub
+      run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.rel_version }} -o ${{ env.pub_dir }} ${{ proj }}
     - name: Zip it
-      run: zip bin\fortran-parser.zip bin\pub\*
+      run: zip ${{ env.pub_res }} ${{ env.pub_dir }}/* & ls ${{ env.pub_res }}
     
       
       
