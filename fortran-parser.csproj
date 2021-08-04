@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk;Microsoft.NET.Sdk.Publish">
 
-	<Import Project=".\common.props"/>
+	<Import Project=".\common.props" />
 	
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,6 +12,14 @@
     <DockerfileContext>.</DockerfileContext>
 
 
+  </PropertyGroup>
+	
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;3021</NoWarn>
+  </PropertyGroup>
+	
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;3021</NoWarn>
   </PropertyGroup>
 
 <ItemGroup>

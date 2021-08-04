@@ -1,8 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="..\common.props"/>
+	<Import Project="..\common.props" />
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>antlr4_fortran</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;3021</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;3021</NoWarn>
   </PropertyGroup>
 
 	<Target Name="buildcharp" Inputs="buildcsharp.bat,Fortran77Lexer.g4,Fortran77Parser.g4" Outputs="csharp\Fortran77Lexer.cs,csharp\Fortran77Parser.cs" BeforeTargets="Compile">
