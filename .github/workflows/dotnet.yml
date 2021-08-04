@@ -29,3 +29,10 @@ jobs:
       run: dotnet test --no-build --verbosity normal
     - name: Build Release
       run: dotnet build --no-restore -c Release -p:RELEASE_VERSION=${{ env.rel_version }}
+    - name: Build publish
+      run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.rel_version }} -o bin\pub
+    - name: Zip it
+      run: zip bin\fortran-parser.zip bin\pub\*
+    
+      
+      
