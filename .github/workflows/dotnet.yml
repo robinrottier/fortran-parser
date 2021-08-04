@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  version: 0.9.0-debug-${{env.GITHUB_RUN_NUMBER}}
+  
 jobs:
   build:
 
@@ -20,7 +23,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build DEBUG
-      run: dotnet build --no-restore -p:RELEASE_VERSION=0.9.0-debug-${{env.GITHUB_RUN_NUMBER}}
+      run: dotnet build --no-restore -p:RELEASE_VERSION=${{ env.version }}
     - name: Test
       run: dotnet test --no-build --verbosity normal
     - name: Build Release
