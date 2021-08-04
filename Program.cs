@@ -22,6 +22,9 @@ namespace antlr4_fortran_parser
         static bool noparse = false;
         static bool help = false;
         static int verbose = 0;
+        static KVNode.OptimizeOptions optimzieOptions = 
+            KVNode.OptimizeOptions.FlattenExpression
+            |KVNode.OptimizeOptions.FLattenVarRef;
 
         public static TextWriter JSONPathOutput = null;
 
@@ -48,8 +51,12 @@ namespace antlr4_fortran_parser
                         jquery = args[++ax];
                     else if (a == "-jpf0" || a == "--jpf-none")
                         jfmt = 0;
-                    else if (a == "-jpfi" || a == "--jpf-indent")
+                    else if (a == "-jpfi" || a == "-jpf1" || a == "--jpf-indent")
                         jfmt = 1;
+                    else if (a == "-jpf" || a == "--jpf")
+                        jfmt = int.Parse(args[++ax]);
+                    else if (a == "-oo" || a == "--optimize-options")
+                        optimzieOptions = (KVNode.OptimizeOptions)(int.Parse(args[++ax]));
                     else
                     {
                         switch (nf++)
@@ -60,6 +67,7 @@ namespace antlr4_fortran_parser
                         }
                     }
                 }
+
             }
             catch
             {
@@ -79,6 +87,11 @@ args:
     --noparse   do not reparse fortran file just reuse previous results for new query
     --verbose   print some detail as we go along
     --jpf-none  JSOPNPath formatting none (single line per result token)
+    --optimize-options  set combination of options for optimization:
+                    0: none
+                    1: flatten expressions
+                    2: flatten varref
+                    default is 3; both set
     [file]      FORTRAN input file name (ends in .f ...result file will be same name replacing with .json etc)
     [JSONPath]  (json only) select tokens from processed result and print
 ");
@@ -398,7 +411,7 @@ args:
                         if (retkv == null)
                             return null;
                         else
-                            return retkv.optimize();
+                            return retkv.optimize(optimzieOptions);
                     }
 
                 case JsonValueKind.Array:

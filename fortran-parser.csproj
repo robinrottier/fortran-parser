@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk;Microsoft.NET.Sdk.Publish">
+
+	<Import Project=".\common.props"/>
+	
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
@@ -7,8 +10,11 @@
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+
+
   </PropertyGroup>
-  <ItemGroup>
+
+<ItemGroup>
     <Compile Remove="antlr4-fortran\**" />
     <Compile Remove="fortran-parserTest\**" />
     <EmbeddedResource Remove="antlr4-fortran\**" />

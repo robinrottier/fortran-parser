@@ -170,7 +170,15 @@ namespace antlr4_fortran_parser
             throw new Exception("Expecting child string or node");
         }
 
-        public KVNode optimize()
+        [Flags]
+        public enum OptimizeOptions
+        {
+            None = 0,
+            FlattenExpression = 1,
+            FLattenVarRef = 2,
+        }
+
+        public KVNode optimize(OptimizeOptions options)
         {
             int cc = ChildCount;
             switch (Key)
@@ -259,17 +267,31 @@ namespace antlr4_fortran_parser
                                 var kv0 = c0 as KVNode;
                                 if (kv0.Key != "expr" && kv0.Key != "VarRef")
                                     ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
-                                //
-                                // flatten expression tree into array
-                                var a = new List<object>();
-                                addExprTreeToArray(c0, a);
-                                var ret = new KVNode("expr", null);
-                                foreach (var x in a)
-                                    ret.AddChild(x);
-                                return ret;
+
+                                if (kv0.Key == "expr")
+                                {
+                                    //
+                                    // flatten expression tree into array
+                                    if ((options & (OptimizeOptions.FlattenExpression | OptimizeOptions.FLattenVarRef)) != 0)
+                                    {
+                                        var a = new List<object>();
+                                        addExprTreeToArray(c0, a, options);
+                                        var ret = new KVNode("expr", null);
+                                        foreach (var x in a)
+                                            ret.AddChild(x);
+                                        return ret;
+                                    }
+                                }
+                                else if (kv0.Key == "VarRef")
+                                {
+                                    // dont flatten varref here as messes up other checks
+                                }
+                                else
+                                {
+                                    ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
+                                }
                             }
-                            else
-                                return new KVNodeSiblingArray(c0);
+                            return new KVNodeSiblingArray(c0);
                         }
                         else if (cc == 0)
                             return null;
@@ -428,9 +450,12 @@ namespace antlr4_fortran_parser
                         ValidateChildCount(3);
                         var lhs = ValidateChildNode(0, "VarRef");
                         ValidateChildString(1, "=");
-                        var rhs = ValidateChildExpr(2);
+                        var rhs = ValidateChildExpr(2, options);
                         var d = new KVDict();
-                        d["lhs"] = lhs;
+                        if ((options & OptimizeOptions.FLattenVarRef) != 0)
+                            d["lhs"] = lhs.Value;
+                        else
+                            d["lhs"] = lhs;
                         d["rhs"] = rhs;
                         return new KVNode(Key, d);
                     }
@@ -531,19 +556,24 @@ namespace antlr4_fortran_parser
             return this;
         }
 
-        void addExprTreeToArray(object node, List<object> output)
+        void addExprTreeToArray(object node, List<object> output, OptimizeOptions options)
         {
             var kvn = node as KVNode;
             if (kvn != null)
             {
                 var val = kvn.Value;
-                if (kvn.Key == "expr")
+                if ((((options & OptimizeOptions.FlattenExpression) != 0) && kvn.Key == "expr"))
                 {
                     int cc = kvn.ChildCount;
                     for (int c = 0; c < cc; c++)
                     {
-                        addExprTreeToArray(kvn.GetChild(c), output);
+                        addExprTreeToArray(kvn.GetChild(c), output, options);
                     }
+                    return;
+                }
+                else if ((((options & OptimizeOptions.FLattenVarRef) != 0) && kvn.Key == "VarRef"))
+                {
+                    addExprTreeToArray(kvn.Value, output, options);
                     return;
                 }
             }
@@ -590,7 +620,7 @@ namespace antlr4_fortran_parser
             return c1;
         }
 
-        object ValidateChildExpr(int c)
+        object ValidateChildExpr(int c, OptimizeOptions options)
         {
             object c1 = GetChild(c);
             if (c1 == null)
@@ -601,9 +631,21 @@ namespace antlr4_fortran_parser
                 switch (kv1.Key)
                 {
                     case "VarRef":
-                        return kv1;
+                        {
+                            // flatten expression tree into array
+                            if ((options & OptimizeOptions.FLattenVarRef) != 0)
+                                return kv1.Value;
+                            else
+                                return kv1;
+                        }
                     case "expr":
-                        return kv1.Value;
+                        {
+                            // flatten expression tree into array
+                            if ((options & OptimizeOptions.FlattenExpression) != 0)
+                                return kv1.Value;
+                            else
+                                return kv1;
+                        }
                     default:
                         ValidateFail($"expecting expression node as VarRef or expr (was {kv1.Key}");
                         break;
