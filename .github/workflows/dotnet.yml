@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      version: 0.9.0-debug-${{env.GITHUB_RUN_NUMBER}}
+      version: 0.9.0-debug-${{ github.run_number }}
   
     steps:
     - uses: actions/checkout@v2
