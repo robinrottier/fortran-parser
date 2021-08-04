@@ -35,7 +35,8 @@ jobs:
     - name: Build publish
       run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.rel_version }} -o ${{ env.pub_dir }} ${{ env.proj }}
     - name: Zip it
-      run: zip ${{ env.pub_res }} ${{ env.pub_dir }}/* & ls ${{ env.pub_res }}
-    
-      
-      
+      run: |
+        ls ${{ env.pub_dir }}
+        zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
+        ls ${{ env.pub_res }}
+        
