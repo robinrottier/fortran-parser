@@ -1,4 +1,4 @@
-name: build
+name: ci
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
       run: |
         ls ${{ env.pub_dir }}
         zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
-        ls ${{ env.pub_res }}
+        ls -al ${{ env.pub_res }}
     - name: Upload output file
       uses: actions/upload-artifact@v2
       with:
@@ -53,4 +53,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ env.pub_res }}       
+          files: fortran-parser.zip      
