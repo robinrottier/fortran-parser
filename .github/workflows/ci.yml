@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: robinrottier/github-actions/setup@v0.9
+    - uses: robinrottier/github-actions/setup@v0.9.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup .NET
@@ -40,7 +40,7 @@ jobs:
         zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
         ls -al ${{ env.pub_res }}
     - name: Upload output file
-      uses: robinrottier/github-actions/upload@v0.9
+      uses: robinrottier/github-actions/upload@v0.9.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: ${{ env.pub_res }}
