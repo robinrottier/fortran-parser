@@ -11,6 +11,7 @@ on:
 env:
   proj: fortran-parser.csproj
   pub_dir: bin/pub
+  zip_res: ../fortran-parser.zip
   pub_res: bin/fortran-parser.zip
 
 jobs:
@@ -37,8 +38,9 @@ jobs:
       run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.BUILD_VERSION }} -o ${{ env.pub_dir }} ${{ env.proj }}
     - name: Zip it
       run: |
-        ls -al ${{ env.pub_dir }}
-        zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
+        cd ${{ env.pub_dir }}
+        ls -al 
+        zip ${{ env.zipS_res }} *
         ls -al ${{ env.pub_res }}
     - name: Upload output file
       uses: robinrottier/github-actions/upload@v0.9.0
