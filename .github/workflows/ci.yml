@@ -37,6 +37,7 @@ jobs:
       run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.BUILD_VERSION }} -o ${{ env.pub_dir }} ${{ env.proj }}
     - name: Zip it
       run: |
+        ls -al ${{ env.pub_dir }}
         zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
         ls -al ${{ env.pub_res }}
     - name: Upload output file
