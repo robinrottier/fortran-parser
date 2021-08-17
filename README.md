@@ -11,7 +11,7 @@ dotnet fortran-parser.dll
 
 ..if in same directory you unzipped to; or simply with the full path if not
 
-dotnet <path>\fortran-parser.dll
+dotnet ...somepath\fortran-parser.dll
 	
 
 
