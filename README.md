@@ -7,11 +7,11 @@ If .NET is instal then the command `dotnet` should "just work" and print some he
 
 Once install and fortran-parser downloaded run with a command like:
 
-dotnet fortran-parser
+dotnet fortran-parser.dll
 
 ..if in same directory you unzipped to; or simply with the full path if not
 
-dotnet <path>\fortran-parser
+dotnet <path>\fortran-parser.dll
 	
 
 
