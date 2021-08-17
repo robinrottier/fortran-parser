@@ -1,4 +1,19 @@
-﻿
+
+How to run
+==========
+Each tagged release on GITHUB included a zipped file of the build. DOwnload and copy to its own folder. The build is a cross platform .NET application, so the .NET runtime needs to be installed first. If you installed the .NET SDK youmaybe for other reasons then already have the runtime. To install just the runtime go to the microsoft page at https://dotnet.microsoft.com/download/dotnet/5.0/runtime and pick your platform of choice. The runtime only is not too large.
+
+If .NET is instal then the command `dotnet` should "just work" and print some help about missing arguments.
+
+Once install and fortran-parser downloaded run with a command like:
+
+dotnet fortran-parser
+
+..if in same directory you unzipped to; or simply with the full path if not
+
+dotnet <path>\fortran-parser
+	
+
 
 Example command lines
 =====================
