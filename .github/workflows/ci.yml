@@ -49,9 +49,11 @@ jobs:
         files: ${{ env.pub_res }}
     - name: Build and push to docker
       if: ${{ env.BUILD_VERSION }}
+      env:
+        DOCKER_TAG: ghcr.io/robinrottier/fortran-parser:${{ env.BUILD_VERSION }} 
       run: |
-        docker build -o fortran-parser .
-        docker push ghcr.io/robinrottier/fortran-parser:${{ env.BUILD_VERSION }}
+        docker build -t ${{ env.DOCKER_TAG }} .
+        docker push ${{ env.DOCKER_TAG }}
         
 
   
