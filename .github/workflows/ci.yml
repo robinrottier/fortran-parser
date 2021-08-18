@@ -50,10 +50,8 @@ jobs:
     - name: Build and push to docker
       if: ${{ env.BUILD_VERSION }}
       env:
-        DOCKER_TAG: ghcr.io/robinrottier/fortran-parser:${{ env.BUILD_VERSION }} 
+        DOCKER_TAG: ghcr.io/${{ github.actor }}/fortran-parser:${{ env.BUILD_VERSION }} 
       run: |
         docker build -t ${{ env.DOCKER_TAG }} .
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
         docker push ${{ env.DOCKER_TAG }}
-        
-
-  
