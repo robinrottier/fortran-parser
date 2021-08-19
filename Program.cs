@@ -31,6 +31,23 @@ namespace antlr4_fortran_parser
 
         public static void Main(string[] args)
         {
+            //
+            // iitialize all the statics!!
+            // -- need to do this for the test cases to work
+            //TODO: find a better test case method!
+            string file = null;
+            int format = 2;
+            int jformat = 2;
+            string jquery = null;
+            int jfmt = 1;
+            bool noparse = false;
+            bool help = false;
+            int verbose = 0;
+            optimzieOptions =
+            KVNode.OptimizeOptions.FlattenExpression
+            | KVNode.OptimizeOptions.FLattenVarRef;
+
+
             try
             {
 
@@ -171,11 +188,12 @@ usage:
                     printNode(res, wrt, format, 0, true);
                 }
 
+                var fi = new FileInfo(resfile);
                 if (verbose > 0)
                 {
-                    var fi = new FileInfo(resfile);
                     Console.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
                 }
+                Debug.WriteLine($"File {fi.FullName} write complete; {fi.Length} bytes");
             }
 
             if (format == 1)
@@ -379,7 +397,8 @@ usage:
             }
             try
             {
-                var nsRdr = new Newtonsoft.Json.JsonTextReader(File.OpenText(resjfile));
+                using var rdr = File.OpenText(resjfile);
+                using var nsRdr = new Newtonsoft.Json.JsonTextReader(rdr);
                 var nsSerializer = new Newtonsoft.Json.JsonSerializer();
                 var nsRes = nsSerializer.Deserialize(nsRdr);
                 if (verbose > 0)

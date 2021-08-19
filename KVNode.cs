@@ -634,7 +634,7 @@ namespace antlr4_fortran_parser
                         {
                             // flatten expression tree into array
                             if ((options & OptimizeOptions.FLattenVarRef) != 0)
-                                return kv1.Value;
+                                return new ArrayList<object>() { kv1.Value };
                             else
                                 return kv1;
                         }
@@ -642,7 +642,10 @@ namespace antlr4_fortran_parser
                         {
                             // flatten expression tree into array
                             if ((options & OptimizeOptions.FlattenExpression) != 0)
-                                return kv1.Value;
+                            {
+                                var v = kv1.Value;
+                                return v;
+                            }
                             else
                                 return kv1;
                         }
@@ -651,6 +654,11 @@ namespace antlr4_fortran_parser
                         break;
                 }
             }
+            // simple value on rhs ... return as array aswell if flattened
+            if (!(c1 is ArrayList<object>))
+                if ((options & OptimizeOptions.FlattenExpression) != 0)
+                    return new ArrayList<object>() { c1 };
+    
             return c1;
         }
     }

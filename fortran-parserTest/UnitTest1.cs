@@ -7,7 +7,7 @@ using System;
 
 namespace fortran_parserTest
 {
-    public class Tests
+    public class UnitTest1
     {
         [SetUp]
         public void Setup()
