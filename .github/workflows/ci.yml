@@ -48,7 +48,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: ${{ env.pub_res }}
     - name: Build and push to docker
-      if: ${{ env.BUILD_VERSION }}
+      if: ${{ env.BUILD_TAG }}
       env:
         DOCKER_TAG: ghcr.io/${{ github.actor }}/fortran-parser:${{ env.BUILD_VERSION }} 
       run: |
