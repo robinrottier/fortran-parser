@@ -4,13 +4,14 @@ on:
   push:
     branches: [ master ]
     tags:
-      - "v*.*.*"
+      - "v*.*"
   pull_request:
     branches: [ master ]
 
 env:
   proj: fortran-parser.csproj
   pub_dir: bin/pub
+  zip_res: ../fortran-parser.zip
   pub_res: bin/fortran-parser.zip
 
 jobs:
@@ -18,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: robinrottier/github-actions/setup@v0.9.0
+    - uses: robinrottier/github-actions/setup@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup .NET
@@ -37,12 +38,20 @@ jobs:
       run: dotnet publish --no-build -p:RELEASE_VERSION=${{ env.BUILD_VERSION }} -o ${{ env.pub_dir }} ${{ env.proj }}
     - name: Zip it
       run: |
-        zip ${{ env.pub_res }} ${{ env.pub_dir }}/*
-        ls -al ${{ env.pub_res }}
+        cd ${{ env.pub_dir }}
+        ls -al 
+        zip ${{ env.zip_res }} *
+        ls -al ${{ env.zip_res }}
     - name: Upload output file
-      uses: robinrottier/github-actions/upload@v0.9.0
+      uses: robinrottier/github-actions/upload@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         files: ${{ env.pub_res }}
-
-  
+    - name: Build and push to docker
+      if: ${{ env.BUILD_TAG }}
+      env:
+        DOCKER_TAG: ghcr.io/${{ github.actor }}/fortran-parser:${{ env.BUILD_VERSION }} 
+      run: |
+        docker build -t ${{ env.DOCKER_TAG }} .
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        docker push ${{ env.DOCKER_TAG }}
