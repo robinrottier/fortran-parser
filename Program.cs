@@ -9,6 +9,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml;
+using System.Reflection;
 
 namespace antlr4_fortran_parser
 {
@@ -77,10 +78,23 @@ namespace antlr4_fortran_parser
 
             if (help || string.IsNullOrEmpty(file))
             {
+                var myver = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                var aiva = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+                if (aiva?.InformationalVersion != null)
+                {
+                    var aivav = aiva.InformationalVersion;
+                    if (!string.IsNullOrEmpty(aivav) && aivav != myver)
+                        myver += $" ({aivav})";
+                }
+
                 Console.WriteLine(
-                    @"
-fortran-parser [args] [file] [JSONPath]
-args:
+                    $@"
+fortran-parser 
+version {myver}
+Read fortran program and convert to XML or JSON structured representation
+usage:
+    fortran-parser [args] [file] [JSONPath]
+    args:
     --help      print this help
     --format    raw output format 0:LISP, 1:XML, 2:JSON
     --jformat   processed JSON file format; 0:none, 1:normal 2:optimized
@@ -94,7 +108,8 @@ args:
                     default is 3; both set
     [file]      FORTRAN input file name (ends in .f ...result file will be same name replacing with .json etc)
     [JSONPath]  (json only) select tokens from processed result and print
-");
+"
+    );
                 return;
             }
             //

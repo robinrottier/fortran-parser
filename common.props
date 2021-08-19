@@ -2,6 +2,6 @@
 <PropertyGroup>
 	  <Version Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</Version>
 	  <VersionPrefix Condition="'$(RELEASE_VERSION)' == ''">0.1.0</VersionPrefix>
-	  <VersionSuffix Condition="'$(RELEASE_VERSION)' == ''">dev-$([System.DateTime]::UtcNow.ToString(`yyyyMMdd-HHmm`))</VersionSuffix>
+	  <VersionSuffix Condition="'$(RELEASE_VERSION)' == ''">dev-$([System.DateTime]::UtcNow.ToString('yyMMddHHmm'))</VersionSuffix>
 </PropertyGroup>
 </Project>

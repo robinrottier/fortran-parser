@@ -30,6 +30,10 @@
     <None Remove="antlr4-fortran\**" />
     <None Remove="fortran-parserTest\**" />
   </ItemGroup>
+
+<ItemGroup>
+  <None Include=".github\workflows\ci.yml" />
+</ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.14" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
