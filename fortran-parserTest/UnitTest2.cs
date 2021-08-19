@@ -86,7 +86,8 @@ namespace fortran_parserTest
 
             var rhs = nsjopm0as["rhs"];
             var xrhs = rhs.ToString();
-            xrhs = xrhs.Replace(EOL, "");
+            xrhs = xrhs.Replace("\n", "");
+            xrhs = xrhs.Replace("\r", "");
             xrhs = xrhs.Replace(" ", "");// carefull!! make sur ewe dont expect spaces
             xrhs = xrhs.Replace("\"", "");// carefull!! make sur ewe dont expect "
             Assert.AreEqual(expectedrhs, xrhs);
