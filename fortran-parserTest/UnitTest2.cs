@@ -28,6 +28,13 @@ namespace fortran_parserTest
             test_simple_expr("A=Q3(5)+B3", "A", "[[Q3,5],+,B3]");
         }
 
+        [Test]
+        public void Test_variablenames_with_underscore()
+        {
+            test_simple_expr("A_1=B_1", "A_1", "[B_1]");
+
+        }
+
         public void test_simple_expr(string source, string expectedlhs, string expectedrhs)
         {
             var f = "temp.test.f";

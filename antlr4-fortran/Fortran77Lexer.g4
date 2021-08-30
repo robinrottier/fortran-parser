@@ -604,7 +604,7 @@ fragment CONTINUATION
 
 
 fragment ALNUM
-   : (ALPHA | NUM)
+   : (ALPHA | NUM | '_')
    ;
 
 
