@@ -217,7 +217,7 @@ usage:
                 try
                 {
                     using var rd = File.OpenRead(resfile);
-                    var jo = new JsonDocumentOptions { MaxDepth = 256 };
+                    var jo = new JsonDocumentOptions { MaxDepth = 1024 };
                     jd = JsonDocument.Parse(rd, jo);
                     if (verbose > 0)
                         Console.WriteLine("...verified file!!");

@@ -32,6 +32,16 @@
   </ItemGroup>
 
 <ItemGroup>
+  <None Remove="7segsprint.f" />
+</ItemGroup>
+
+<ItemGroup>
+  <Content Include="7segsprint.f">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </Content>
+</ItemGroup>
+
+<ItemGroup>
   <None Include=".github\workflows\ci.yml" />
 </ItemGroup>
   <ItemGroup>

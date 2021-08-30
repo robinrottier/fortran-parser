@@ -654,12 +654,13 @@ ICON
    ;
 
 NAME
-   : (('i' | 'f' | 'd' | 'g' | 'e') (NUM) + '.') FDESC | (ALNUM +) (ALNUM)*
+   : ((('i' | 'f' | 'd' | 'g' | 'e') (NUM) + '.') FDESC) | ((ALNUM +) (ALNUM)*)
    ;
 
 
 COMMENT
-   : {Column == 0}? ('c' | 'C' | STARCHAR) (~ [\r\n])* EOL
+   : {Column == 0}? ('c' | 'C' | STARCHAR | '!') (~ [\r\n])* EOL
+   | {Column == 6}? ('!') (~ [\r\n])* EOL
    ;
 
 STAR

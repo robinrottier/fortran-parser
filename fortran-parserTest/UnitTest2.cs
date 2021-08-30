@@ -29,10 +29,18 @@ namespace fortran_parserTest
         }
 
         [Test]
-        public void Test_variablenames_with_underscore()
+        public void Test_variable_names_with_underscore()
         {
             test_simple_expr("A_1=B_1", "A_1", "[B_1]");
 
+        }
+
+        [Test]
+        public void Test_variable_named_IF()
+        {
+            test_simple_expr("A=IF", "A", "[IF]");
+            test_simple_expr("IF=A", "IF", "[A]");
+            test_simple_expr("IF=IF+IF", "IF", "[IF,+,IF]");
         }
 
         public void test_simple_expr(string source, string expectedlhs, string expectedrhs)

@@ -121,7 +121,7 @@ wholeStatement
    ;
    
 endStatement
-   : LABEL? END
+   : LABEL? END ((PROGRAM NAME)|(SUBROUTINE NAME))?
    ;
 
 dimensionStatement
@@ -166,7 +166,7 @@ commonName
    ;
 
 commonItem
-   : NAME
+   : variableName
    | arrayDeclarator
    ;
 
@@ -839,7 +839,7 @@ logicalConstExpr
    ;
 
 arrayElementName
-   : NAME LPAREN integerExpr (COMMA integerExpr)* RPAREN
+   : variableName LPAREN integerExpr (COMMA integerExpr)* RPAREN
    ;
 
 subscripts
@@ -847,11 +847,11 @@ subscripts
    ;
 
 varRef
-   : (NAME | REAL) (subscripts (substringApp)?)?
+   : (variableName | REAL) (subscripts (substringApp)?)?
    ;
 
 varRefCode
-   : NAME (subscripts (substringApp)?)?
+   : variableName (subscripts (substringApp)?)?
    ;
 
 substringApp
@@ -859,11 +859,11 @@ substringApp
    ;
 
 variableName
-   : NAME
+   : identifier
    ;
 
 arrayName
-   : NAME
+   : identifier
    ;
 
 subroutineName
@@ -899,6 +899,7 @@ logicalConstant
 identifier
    : NAME
    | REAL
+   | IF
    ;
 
 to

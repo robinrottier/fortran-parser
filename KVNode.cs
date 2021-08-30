@@ -258,6 +258,8 @@ namespace antlr4_fortran_parser
                 // these nodes expect just have single child node (expr) or a value
                 // ...so just use that child                 // (and throw if not)
                 case "Expression":
+                case "Identifier":
+                case "VariableName":
                     {
                         if (cc == 1)
                         {
@@ -265,9 +267,6 @@ namespace antlr4_fortran_parser
                             if (c0 is KVNode)
                             {
                                 var kv0 = c0 as KVNode;
-                                if (kv0.Key != "expr" && kv0.Key != "VarRef")
-                                    ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
-
                                 if (kv0.Key == "expr")
                                 {
                                     //
@@ -286,6 +285,10 @@ namespace antlr4_fortran_parser
                                 {
                                     // dont flatten varref here as messes up other checks
                                 }
+                                else if (kv0.Key == "LogicalConstant")
+                                {
+                                    // dont flatten varref here as messes up other checks
+                                }
                                 else
                                 {
                                     ValidateFail($"expecting child node to be varref or expr (was {kv0.Key})");
@@ -295,6 +298,15 @@ namespace antlr4_fortran_parser
                         }
                         else if (cc == 0)
                             return null;
+
+                        //
+                        // except (!) expression can also be an array when its like array dims "1:9" in
+                        // array subscript ... check that
+                        if (this.Key == "Expression" && cc == 3)
+                        {
+                            return new KVNodeSiblingArray(Value);
+                        }
+
                         throw new Exception($"Unexpected in {Key}");
                     }
                 //
@@ -468,6 +480,12 @@ namespace antlr4_fortran_parser
                         //
                         if (cc == 1)
                         {
+                            // we can return lhs singlw var s an array just copntnaing the name...loose the array
+                            if (IsValueArray)
+                            {
+                                var c0 = GetChild(0);
+                                this.Value = c0;
+                            }
                             return this;
                         }
                         //
@@ -486,7 +504,7 @@ namespace antlr4_fortran_parser
                             if (ssc < sscc - 2)
                             {
                                 ssc++;
-                                ss.ValidateChildString(ssc, ",");
+                                ss.ValidateChildString(ssc, ",", ":");
                             }
                         }
                         ss.ValidateChildString(ssc++, ")");
@@ -513,6 +531,13 @@ namespace antlr4_fortran_parser
                             {
                                 return new KVNodeSiblingArray(dres);
                             }
+                            if (v.Contains("D"))
+                            {
+                                if (double.TryParse(v.Replace("D","E"), out dres))
+                                {
+                                    return new KVNodeSiblingArray(dres);
+                                }
+                            }
                         }
                         int ires;
                         if (int.TryParse(v, out ires))
@@ -524,26 +549,33 @@ namespace antlr4_fortran_parser
 
                 case "SubroutineStatement":
                     {
-                        ValidateChildCount(6);
-                        ValidateChildString(0, "SUBROUTINE");
-                        var name = ValidateChildString(1);
-                        ValidateChildString(2, "(");
-                        var c3 = ValidateChildNode(3, "Namelist");
-                        ValidateChildString(4, ")");
-                        ValidateChildString(5, "\r\n");
-
-                        var c3cc = c3.ChildCount;
-                        var args = new ArrayList<object>();
-                        for (int c = 0; c < c3cc; c++)
+                        ValidateChildCount(5,6);
+                        int c = 0;
+                        ValidateChildString(c++, "SUBROUTINE");
+                        var name = ValidateChildString(c++);
+                        ValidateChildString(c++, "(");
+                        KVNode c3 = null;
+                        if (cc == 6)
                         {
-                            var argnode = c3.ValidateChildNode(c, "Identifier");
-                            var argname = argnode.ValidateChildString(0);
-                            if (c < c3cc - 1)
+                            c3 = ValidateChildNode(c++, "Namelist");
+                        }
+                        ValidateChildString(c++, ")");
+                        ValidateChildString(c++, "\r\n");
+
+                        var args = new ArrayList<object>();
+                        if (c3 != null)
+                        {
+                            var c3cc = c3.ChildCount;
+                            for (int c3c = 0; c3c < c3cc; c3c++)
                             {
-                                c++;
-                                c3.ValidateChildString(c, ",");
+                                var argname = c3.ValidateChildString(c3c);
+                                if (c3c < c3cc - 1)
+                                {
+                                    c3c++;
+                                    c3.ValidateChildString(c3c, ",");
+                                }
+                                args.Add(argname);
                             }
-                            args.Add(argname);
                         }
 
                         var ret = new KVNode(Key, null);
@@ -588,10 +620,18 @@ namespace antlr4_fortran_parser
         void ValidateChildCount(int c)
         {
             if (ChildCount != c)
-                ValidateFail($"expecting {c} children");
+                ValidateFail($"expecting {c} children (was {ChildCount})");
         }
 
-        string ValidateChildString(int c, string value = null)
+        int ValidateChildCount(int from, int to)
+        {
+            var c = ChildCount;
+            if (c < from || c > to)
+                ValidateFail($"expecting between {from} and {to} children (was {c})");
+            return c;
+        }
+        
+        string ValidateChildString(int c, string value = null, string orValue2=null)
         {
             var c0 = GetChild(c);
             if (value == null)
@@ -605,16 +645,27 @@ namespace antlr4_fortran_parser
             {
                 string actual = c0.ToString();
                 if (actual != value)
-                    ValidateFail($"expecting child {c} to be '{value}' (was {actual})");
+                {
+                    if (orValue2 == null)
+                        ValidateFail($"expecting child {c} to be '{value}' (was {actual})");
+                    else
+                    {
+                        if (actual != orValue2)
+                        {
+                            ValidateFail($"expecting child {c} to be '{value}' or '{orValue2}' (was {actual})");
+                        }
+                    }
+                }
             }
             return value;
         }
 
         KVNode ValidateChildNode(int c, string key = null)
         {
-            KVNode c1 = GetChild(c) as KVNode;
+            var o1 = GetChild(c);
+            KVNode c1 = o1 as KVNode;
             if (c1 == null)
-                ValidateFail($"expecting child {c} to be node");
+                ValidateFail($"expecting child {c} to be node (was {o1.GetType().ToString()})");
             else if (key != null && c1.Key != key)
                 ValidateFail($"expecting child {c} to be {key} node (was {c1.Key})");
             return c1;
@@ -631,6 +682,7 @@ namespace antlr4_fortran_parser
                 switch (kv1.Key)
                 {
                     case "VarRef":
+                    case "LogicalConstant":
                         {
                             // flatten expression tree into array
                             if ((options & OptimizeOptions.FLattenVarRef) != 0)
