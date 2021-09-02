@@ -24,7 +24,7 @@
 			>
 		<Message Text="Building lexer '@(G4Lexer)'" Importance="high" />
 		<Exec Command="echo cd: %25CD%25" />
-		<Exec Command="antlr4.bat -Dlanguage=CSharp -o csharp @(G4Lexer)" />
+		<Exec Command="$(MSBuildProjectDirectory)\antlr4.bat -Dlanguage=CSharp -o csharp @(G4Lexer)" />
 		<Exec Command="echo Done! >@(G4Lexer->'obj\%(Filename).g4.built')" />
 	</Target>
 
@@ -36,7 +36,7 @@
 			DependsOnTargets="build_lexer"
 			>
 		<Message Text="Building parser '@(G4Parser)'" Importance="high" />
-		<Exec Command="antlr4.bat -Dlanguage=CSharp -o csharp @(G4Parser)" />
+		<Exec Command="$(MSBuildProjectDirectory)\antlr4.bat -Dlanguage=CSharp -o csharp @(G4Parser)" />
 		<Exec Command="echo Done! >@(G4Parser->'obj\%(Filename).g4.built')" />
 	</Target>
 
