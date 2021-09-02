@@ -28,6 +28,10 @@ Then install dotnet runtime...
 ```
 sudo apt-get update;   sudo apt-get install -y apt-transport-https &&   sudo apt-get update &&   sudo apt-get install -y dotnet-runtime-5.0
 ```
+To build this project on WSL you need the full sdk:
+```
+sudo apt-get install -y dotnet-sdk-5.0
+```
 
 Example command lines
 =====================
