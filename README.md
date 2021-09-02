@@ -14,6 +14,20 @@ dotnet fortran-parser.dll
 dotnet ...somepath\fortran-parser.dll
 	
 
+Install dotnet runtime on WSL
+-----------------------------
+Following instructions on
+
+First add MS packages to the list...
+```
+wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+```
+Then install dotnet runtime...
+```
+sudo apt-get update;   sudo apt-get install -y apt-transport-https &&   sudo apt-get update &&   sudo apt-get install -y dotnet-runtime-5.0
+```
 
 Example command lines
 =====================
