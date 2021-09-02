@@ -23,6 +23,7 @@
 			Outputs="@(G4Lexer->'obj\%(Filename).g4.built')"
 			>
 		<Message Text="Building lexer '@(G4Lexer)'" Importance="high" />
+		<Exec Command="echo cd: %25CD%25" />
 		<Exec Command="antlr4.bat -Dlanguage=CSharp -o csharp @(G4Lexer)" />
 		<Exec Command="echo Done! >@(G4Lexer->'obj\%(Filename).g4.built')" />
 	</Target>
