@@ -11,7 +11,36 @@
     <NoWarn>1701;1702;3021</NoWarn>
   </PropertyGroup>
 
-	<Target Name="buildcharp" Inputs="buildcsharp.bat,Fortran77Lexer.g4,Fortran77Parser.g4" Outputs="csharp\Fortran77Lexer.cs,csharp\Fortran77Parser.cs" BeforeTargets="Compile">
+	<ItemGroup>
+		<G4Lexer Include="Fortran77Lexer.g4" />
+		<G4Parser Include="Fortran77Parser.g4" />
+	</ItemGroup>
+		
+	<Target Name="build_lexer"
+			BeforeTargets="Compile"
+			Condition="true"
+			Inputs="@(G4Lexer)"
+			Outputs="@(G4Lexer->'obj\%(Filename).g4.built')"
+			>
+		<Message Text="Building lexer '@(G4Lexer)'" Importance="high" />
+		<Exec Command="antlr4.bat -Dlanguage=CSharp -o csharp @(G4Lexer)" />
+		<Exec Command="echo Done! >@(G4Lexer->'obj\%(Filename).g4.built')" />
+	</Target>
+
+	<Target Name="build_parser"
+			BeforeTargets="Compile"
+			Condition="true"
+			Inputs="@(G4Parser)"
+			Outputs="@(G4Parser->'obj\%(Filename).g4.built')"
+			DependsOnTargets="build_lexer"
+			>
+		<Message Text="Building parser '@(G4Parser)'" Importance="high" />
+		<Exec Command="antlr4.bat -Dlanguage=CSharp -o csharp @(G4Parser)" />
+		<Exec Command="echo Done! >@(G4Parser->'obj\%(Filename).g4.built')" />
+	</Target>
+
+	<Target Name="clean_g4" BeforeTargets="Clean">
+		<Exec Command="del obj\*.g4.built" />
 	</Target>
 
 	<ItemGroup>
